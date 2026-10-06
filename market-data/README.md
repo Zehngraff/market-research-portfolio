@@ -23,9 +23,16 @@ Use a fresh output directory for each demo. Existing evidence is never cleared o
 overwritten by the demo command. To install the CLI in a virtual environment:
 
 ```sh
-python -m pip install --no-build-isolation .
+python -m pip install .
 market-archive demo --output output/installed-demo
 ```
+
+The optional package install needs pip plus one-time access to the declared
+setuptools build backend (from a configured package index or local cache); pip
+creates its isolated build environment. Runtime and source-tree tests remain
+standard-library-only. The verified install used preinstalled build tools with
+build isolation disabled; a clean-environment backend download has not been
+verified here. The source-tree commands above require no package installation.
 
 Open [the regenerated sample report](examples/demo-report.md) for an immediate
 walkthrough. [The compact JSON summary](examples/demo-summary.json) exposes every
@@ -82,7 +89,8 @@ entire original project.
 ## Data model
 
 `markets` stores explicit identifiers, supplied event grouping, source group,
-metadata, last attempt, next cursor and endpoint-exhaustion status.
+metadata, last attempt, next cursor, endpoint-exhaustion status and a separate
+closure-refresh state (`none`, `pending` or `active`).
 
 `rows` stores a response fingerprint, market identity, source timestamp and raw
 file reference. This fingerprint is not claimed to be an exchange fill ID.
@@ -92,7 +100,15 @@ file reference. This fingerprint is not claimed to be an exchange fill ID.
 
 Raw responses are written before validation. SQLite page and row changes are
 atomic. A failed page preserves the last good checkpoint. Completed open-market
-traversals may start another overlapping traversal; closed exhausted markets skip.
+traversals may start another overlapping traversal. On an open-to-closed change,
+a fresh traversal is scheduled durably; exhaustion from before closure does not
+suppress it. If the old traversal is incomplete, its saved cursor is completed
+first, then the fresh closed traversal starts on the next bounded run. Inventory
+shows `pending` or `active` until that fresh traversal successfully exhausts;
+failed requests preserve both the refresh state and last good checkpoint.
+Subsequent closed runs skip only after it completes. Reopening clears the closure
+refresh requirement. Upgrading an older archive schedules a conservative refresh
+for existing closed rows because their exhaustion timing is unknown.
 Run one writer per archive directory. Multi-process coordination is not supported.
 
 ## Optional public collection

@@ -32,6 +32,9 @@ def jsonstat_rows(data, *, include_missing=False, max_cells=2_000_000):
         dims.append(ordered)
     values = data.get("value", {})
     statuses = data.get("status", {})
+    # JSON-stat scalar status strings apply to every cell, including missing cells.
+    if isinstance(statuses, str):
+        statuses = [statuses] * total
     for container in [values, statuses]:
         if not isinstance(container, (dict, list)):
             raise ValueError("Values/status must be a sparse object or dense list")

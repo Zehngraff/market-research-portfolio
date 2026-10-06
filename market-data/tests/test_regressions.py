@@ -352,3 +352,153 @@ class PipelineRegressions(unittest.TestCase):
         before=(root/'index.db').read_bytes()
         with self.assertRaises(ValueError): demo(root)
         self.assertEqual((root/'index.db').read_bytes(), before)
+
+
+class ClosureRefreshRegressions(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.manifest = [dict(MANIFEST[0])]
+
+    def collect(self, transport, *, max_pages=1):
+        archive = Archive(self.root, transport=transport, clock=lambda:FIXED_TIME,
+                          sleep=lambda _:None, source_label='SYNTHETIC_FIXTURE')
+        return run(self.root, self.manifest, archive=archive,
+                   max_pages=max_pages, include_books=False)
+
+    def test_completed_open_market_refreshes_after_closure_then_skips(self):
+        transport=Mock(side_effect=[page([row(identity='initial')]),
+                                    page([row(identity='initial'),row(identity='late-at-close')])])
+        first=self.collect(transport)
+        self.assertEqual(first['inventory'][0]['exhausted'],1)
+        self.manifest[0]['closed']=True
+        closed=self.collect(transport)
+        self.assertEqual(transport.call_count,2)
+        self.assertEqual(closed['trade_index']['fingerprints'],2)
+        self.assertEqual(closed['trades'][0]['identical_rows'],1)
+        self.assertEqual(closed['inventory'][0]['closure_refresh'],'none')
+        again=self.collect(transport)
+        self.assertEqual(transport.call_count,2)
+        self.assertEqual(again['trades'],[])
+        self.assertTrue(verify(self.root)['passed'])
+
+    def test_failed_closure_refresh_remains_pending_for_retry(self):
+        self.collect(lambda *_:page([row(identity='initial')]))
+        self.manifest[0]['closed']=True
+        failed=self.collect(Mock(side_effect=ValueError('fixture fetch failure')))
+        self.assertFalse(failed['collection_complete_without_errors'])
+        self.assertEqual(failed['inventory'][0]['closure_refresh'],'active')
+        # Original successful page and exhaustion evidence are not rewritten by failure.
+        self.assertEqual(failed['inventory'][0]['exhausted'],1)
+        self.assertTrue(verify(self.root)['passed'])
+        transport=Mock(return_value=page([row(identity='late-at-close')]))
+        retried=self.collect(transport)
+        self.assertEqual(transport.call_count,1)
+        self.assertEqual(retried['trade_index']['fingerprints'],2)
+        self.assertEqual(retried['inventory'][0]['closure_refresh'],'none')
+        self.collect(transport)
+        self.assertEqual(transport.call_count,1)
+        self.assertTrue(verify(self.root)['passed'])
+
+    def test_partial_open_traversal_finishes_then_new_closed_head_is_replayed(self):
+        transport=Mock(side_effect=[page([row(identity='open-head')],'old-tail'),
+                                    page([row(identity='open-tail')]),
+                                    page([row(identity='late-head')],'closed-tail'),
+                                    page([row(identity='late-tail')])])
+        self.collect(transport)
+        self.manifest[0]['closed']=True
+        finishing_old=self.collect(transport)
+        self.assertEqual(transport.call_args.args[2]['cursor'],'old-tail')
+        self.assertEqual(finishing_old['inventory'][0]['closure_refresh'],'pending')
+        self.assertTrue(verify(self.root)['passed'])
+        new_head=self.collect(transport)
+        self.assertNotIn('cursor',transport.call_args.args[2])
+        self.assertEqual(new_head['inventory'][0]['closure_refresh'],'active')
+        self.assertTrue(verify(self.root)['passed'])
+        new_tail=self.collect(transport)
+        self.assertEqual(transport.call_args.args[2]['cursor'],'closed-tail')
+        self.assertEqual(new_tail['inventory'][0]['closure_refresh'],'none')
+        self.assertEqual(new_tail['trade_index']['fingerprints'],4)
+        self.collect(transport)
+        self.assertEqual(transport.call_count,4)
+        self.assertTrue(verify(self.root)['passed'])
+
+    def test_upgrade_schedules_one_conservative_refresh_for_old_closed_rows(self):
+        # Construct the pre-fix schema without the new refresh state. No network.
+        con=sqlite3.connect(self.root/'index.db')
+        con.execute('''CREATE TABLE markets (
+            condition TEXT PRIMARY KEY,event_id TEXT NOT NULL,source_group TEXT NOT NULL,
+            closed INTEGER NOT NULL,metadata TEXT NOT NULL,discovered REAL NOT NULL,
+            last_attempt REAL NOT NULL DEFAULT 0,cursor TEXT,exhausted INTEGER NOT NULL DEFAULT 0)''')
+        con.execute('INSERT INTO markets VALUES(?,?,?,?,?,?,?,?,?)',
+                    ('demo-open','demo-event-a','synthetic',1,'{}',FIXED_TIME,0,None,1))
+        con.commit(); con.close()
+        self.manifest[0]['closed']=True
+        con=database(self.root)
+        self.assertEqual(con.execute('SELECT closure_refresh FROM markets').fetchone()[0],'pending')
+        con.close()
+        transport=Mock(return_value=page([row(identity='after-upgrade')]))
+        self.collect(transport)
+        self.collect(transport)
+        self.assertEqual(transport.call_count,1)
+        self.assertTrue(verify(self.root)['passed'])
+
+    def test_failed_resumed_closure_refresh_preserves_cursor_and_retries(self):
+        self.collect(lambda *_:page([row(identity='initial')]))
+        self.manifest[0]['closed']=True
+        first=self.collect(lambda *_:page([row(identity='closed-head')],'closed-tail'))
+        self.assertEqual(first['inventory'][0]['closure_refresh'],'active')
+        failed=self.collect(Mock(side_effect=ValueError('fixture tail failure')))
+        self.assertEqual(failed['inventory'][0]['closure_refresh'],'active')
+        self.assertEqual(failed['inventory'][0]['cursor'],'closed-tail')
+        self.assertFalse(failed['collection_complete_without_errors'])
+        self.assertTrue(verify(self.root)['passed'])
+        transport=Mock(return_value=page([row(identity='closed-tail')]))
+        retried=self.collect(transport)
+        self.assertEqual(transport.call_args.args[2]['cursor'],'closed-tail')
+        self.assertEqual(retried['inventory'][0]['closure_refresh'],'none')
+        self.collect(transport)
+        self.assertEqual(transport.call_count,1)
+        self.assertTrue(verify(self.root)['passed'])
+
+    def test_reopening_clears_pending_and_active_refresh_requirements(self):
+        self.collect(lambda *_:page([row(identity='initial')],'open-tail'))
+        self.manifest[0]['closed']=True
+        pending=self.collect(lambda *_:page([row(identity='open-tail')]))
+        self.assertEqual(pending['inventory'][0]['closure_refresh'],'pending')
+        self.manifest[0]['closed']=False
+        reopened=self.collect(lambda *_:page([row(identity='reopened')]))
+        self.assertEqual(reopened['inventory'][0]['closure_refresh'],'none')
+        self.manifest[0]['closed']=True
+        failed=self.collect(Mock(side_effect=ValueError('fixture closure failure')))
+        self.assertEqual(failed['inventory'][0]['closure_refresh'],'active')
+        self.manifest[0]['closed']=False
+        reopened_again=self.collect(lambda *_:page([row(identity='reopened-again')]))
+        self.assertEqual(reopened_again['inventory'][0]['closure_refresh'],'none')
+        self.assertEqual(reopened_again['trade_index']['fingerprints'],4)
+        self.assertTrue(verify(self.root)['passed'])
+
+    def test_failed_schema_upgrade_rolls_back_and_retry_marks_closed_pending(self):
+        con=sqlite3.connect(self.root/'index.db')
+        con.execute('''CREATE TABLE markets (
+            condition TEXT PRIMARY KEY,event_id TEXT NOT NULL,source_group TEXT NOT NULL,
+            closed INTEGER NOT NULL,metadata TEXT NOT NULL,discovered REAL NOT NULL,
+            last_attempt REAL NOT NULL DEFAULT 0,cursor TEXT,exhausted INTEGER NOT NULL DEFAULT 0)''')
+        con.execute('INSERT INTO markets VALUES(?,?,?,?,?,?,?,?,?)',
+                    ('demo-open','demo-event-a','synthetic',1,'{}',FIXED_TIME,0,None,1))
+        con.execute("""CREATE TRIGGER fail_upgrade BEFORE UPDATE ON markets
+            BEGIN SELECT RAISE(ABORT,'fixture migration failure'); END""")
+        con.commit(); con.close()
+        with self.assertRaises(sqlite3.IntegrityError):
+            database(self.root)
+        con=sqlite3.connect(self.root/'index.db')
+        self.assertNotIn('closure_refresh',{r[1] for r in con.execute('PRAGMA table_info(markets)')})
+        con.execute('DROP TRIGGER fail_upgrade'); con.commit(); con.close()
+        con=database(self.root)
+        self.assertEqual(con.execute('SELECT closure_refresh FROM markets').fetchone()[0],'pending')
+        con.close()
+        self.manifest[0]['closed']=True
+        transport=Mock(return_value=page([row(identity='after-migration-retry')]))
+        self.collect(transport); self.collect(transport)
+        self.assertEqual(transport.call_count,1)
+        self.assertTrue(verify(self.root)['passed'])

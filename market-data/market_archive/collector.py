@@ -19,6 +19,11 @@ def collect_trades(con, archive, market, report, *, max_pages=2):
     counts = dict(condition=condition, source_group=market['source_group'], closed=bool(market['closed']),
                   rows=0, identical_rows=0, pages=0, endpoint_exhausted=False)
     try:
+        # Keep the last good cursor/exhaustion evidence intact while scheduling
+        # a fresh traversal after closure. Failed requests must not consume it.
+        if market['closed'] and market['closure_refresh'] == 'pending' and cursor is None:
+            with con:
+                con.execute("UPDATE markets SET closure_refresh='active' WHERE condition=?", (condition,))
         for _ in range(max_pages):
             params = dict(condition=condition, limit=500)
             if cursor:
@@ -33,8 +38,10 @@ def collect_trades(con, archive, market, report, *, max_pages=2):
                     result = con.execute('INSERT OR IGNORE INTO rows VALUES(?,?,?,?)',
                         (fingerprint(row), condition, int(row['timestamp']), raw))
                     duplicate_rows += 1 - result.rowcount
-                con.execute('UPDATE markets SET cursor=?, exhausted=? WHERE condition=?',
-                            (next_cursor, next_cursor is None, condition))
+                con.execute('''UPDATE markets SET cursor=?, exhausted=?,
+                    closure_refresh=CASE WHEN ? IS NULL AND closure_refresh='active'
+                    THEN 'none' ELSE closure_refresh END WHERE condition=?''',
+                    (next_cursor, next_cursor is None, next_cursor, condition))
                 con.execute('INSERT INTO pages(condition,request_cursor,next_cursor,raw_file,row_count) VALUES(?,?,?,?,?)',
                             (condition, cursor, next_cursor, raw, len(rows)))
                 if next_cursor:
@@ -107,7 +114,9 @@ def database(root):
         condition TEXT PRIMARY KEY, event_id TEXT NOT NULL, source_group TEXT NOT NULL,
         closed INTEGER NOT NULL CHECK(closed IN (0,1)), metadata TEXT NOT NULL,
         discovered REAL NOT NULL, last_attempt REAL NOT NULL DEFAULT 0,
-        cursor TEXT, exhausted INTEGER NOT NULL DEFAULT 0 CHECK(exhausted IN (0,1)));
+        cursor TEXT, exhausted INTEGER NOT NULL DEFAULT 0 CHECK(exhausted IN (0,1)),
+        closure_refresh TEXT NOT NULL DEFAULT 'none'
+            CHECK(closure_refresh IN ('none','pending','active')));
       CREATE TABLE IF NOT EXISTS rows (
         fingerprint TEXT PRIMARY KEY, condition TEXT NOT NULL REFERENCES markets(condition),
         ts INTEGER NOT NULL, raw_file TEXT NOT NULL);
@@ -118,6 +127,17 @@ def database(root):
         condition TEXT NOT NULL REFERENCES markets(condition), cursor TEXT NOT NULL,
         PRIMARY KEY(condition,cursor));
     ''')
+    columns = {row[1] for row in con.execute('PRAGMA table_info(markets)')}
+    if 'closure_refresh' not in columns:
+        # Older archives cannot prove whether a closed row exhausted before or
+        # after closure. Conservatively request one fresh traversal on upgrade.
+        with con:
+            # sqlite3 does not implicitly BEGIN for DDL. Keep schema and state
+            # initialization atomic so an interrupted upgrade is retryable.
+            con.execute('BEGIN')
+            con.execute('''ALTER TABLE markets ADD COLUMN closure_refresh TEXT NOT NULL DEFAULT 'none'
+                CHECK(closure_refresh IN ('none','pending','active'))''')
+            con.execute("UPDATE markets SET closure_refresh='pending' WHERE closed=1")
     con.row_factory = sqlite3.Row
     return con
 
@@ -141,6 +161,8 @@ def register_markets(con, manifest, *, now):
             con.execute('''INSERT INTO markets(condition,event_id,source_group,closed,metadata,discovered)
                 VALUES(?,?,?,?,?,?) ON CONFLICT(condition) DO UPDATE SET
                 event_id=excluded.event_id,source_group=excluded.source_group,
+                closure_refresh=CASE WHEN markets.closed=0 AND excluded.closed=1 THEN 'pending'
+                    WHEN excluded.closed=0 THEN 'none' ELSE markets.closure_refresh END,
                 closed=excluded.closed,metadata=excluded.metadata''',
                 (market['condition'], market['event_id'], market['source_group'], market['closed'],
                  json.dumps(market, sort_keys=True), now))
@@ -158,7 +180,7 @@ def run(root, manifest, *, archive=None, max_pages=2, include_books=True):
         register_markets(con, manifest, now=archive.clock())
         for requested in manifest:
             market = con.execute('SELECT * FROM markets WHERE condition=?', (requested['condition'],)).fetchone()
-            if market['closed'] and market['exhausted']:
+            if market['closed'] and market['exhausted'] and market['closure_refresh'] == 'none':
                 continue
             with con:
                 con.execute('UPDATE markets SET last_attempt=? WHERE condition=?',
@@ -167,7 +189,7 @@ def run(root, manifest, *, archive=None, max_pages=2, include_books=True):
             if include_books and not market['closed']:
                 collect_books(archive, market, report)
         report['inventory'] = [dict(r) for r in con.execute(
-            'SELECT condition,event_id,source_group,closed,cursor,exhausted FROM markets ORDER BY condition')]
+            'SELECT condition,event_id,source_group,closed,cursor,exhausted,closure_refresh FROM markets ORDER BY condition')]
         report['trade_index'] = dict(con.execute(
             'SELECT COUNT(*) fingerprints,MIN(ts) first_ts,MAX(ts) last_ts FROM rows').fetchone())
         report['validated_pages'] = con.execute('SELECT COUNT(*) FROM pages').fetchone()[0]

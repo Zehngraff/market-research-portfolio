@@ -40,3 +40,42 @@ class JsonStatTests(unittest.TestCase):
         raw = fixture(); raw["value"] = {}
         self.assertEqual(jsonstat_rows(raw), [])
         self.assertEqual(len(jsonstat_rows(raw, include_missing=True)), 4)
+
+    def test_scalar_status_applies_to_every_cell_including_missing(self):
+        raw = fixture(); raw["status"] = "e"
+        rows = jsonstat_rows(raw, include_missing=True)
+        self.assertEqual([row["status"] for row in rows], ["e"] * 4)
+        self.assertEqual([row["value"] for row in rows], [0, 2, None, 4])
+        self.assertTrue(rows[2]["is_missing"])
+        self.assertEqual([row["status"] for row in jsonstat_rows(raw)], ["e"] * 3)
+        self.assertEqual(raw["status"], "e")  # The input document is not mutated.
+
+    def test_dense_statuses_follow_cell_positions(self):
+        raw = fixture(); raw["status"] = ["a", "p", "m", "e"]
+        rows = jsonstat_rows(raw, include_missing=True)
+        self.assertEqual([row["status"] for row in rows], ["a", "p", "m", "e"])
+        self.assertEqual([row["status"] for row in jsonstat_rows(raw)], ["a", "p", "e"])
+
+    def test_sparse_statuses_preserve_unassigned_and_missing_cells(self):
+        raw = fixture(); raw["status"] = {"1": "p", "2": "m"}
+        rows = jsonstat_rows(raw, include_missing=True)
+        self.assertEqual([row["status"] for row in rows], [None, "p", "m", None])
+
+    def test_absent_status_returns_none_for_all_cells(self):
+        raw = fixture(); raw.pop("status")
+        rows = jsonstat_rows(raw, include_missing=True)
+        self.assertEqual([row["status"] for row in rows], [None] * 4)
+
+    def test_non_string_scalar_status_is_rejected(self):
+        for status in [1, 1.5, True, None]:
+            with self.subTest(status=status), self.assertRaises(ValueError):
+                raw = fixture(); raw["status"] = status
+                jsonstat_rows(raw)
+
+    def test_scalar_status_does_not_relax_value_validation(self):
+        for value in ["e", 1, True, None, [0, 2, None],
+                      {"0": "1"}, {"0": True}, {"0": float("inf")},
+                      {"0": float("nan")}, {"4": 1}]:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                raw = fixture(); raw.update(status="e", value=value)
+                jsonstat_rows(raw)

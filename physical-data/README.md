@@ -82,6 +82,6 @@ Live catalogue collection retains asset metadata but does **not** download or op
 
 ## Tests and data rights
 
-The 44 offline tests cover physical unit calculations, cumulative rainfall boundaries, leap/year transitions, missing/bad/duplicate inputs, nodata/cloud/scale/offset handling, NDMI pixel counts, same-date weighting, cutoff leakage, JSON-stat dimension order, pagination, corrupt caches and byte-identical demo reruns. See [tests](tests/).
+The 50 offline tests cover physical unit calculations, cumulative rainfall boundaries, leap/year transitions, missing/bad/duplicate inputs, nodata/cloud/scale/offset handling, NDMI pixel counts, same-date weighting, cutoff leakage, JSON-stat dimension order and scalar/dense/sparse status handling, pagination, corrupt caches and byte-identical demo reruns. See [tests](tests/).
 
 No project-level software licence is selected here. No private parcel data, downloaded reports, proprietary archives or real satellite/weather observations are included. Dependency licences remain those of their authors. See [source and data notes](SOURCES.md) before acquiring or redistributing provider data.

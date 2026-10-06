@@ -36,7 +36,7 @@ The included examples use small, labelled fixtures. Full raster retrieval, geosp
 
 Use Python 3.11 or later. The market-data module uses the standard library; physical-data also uses NumPy and pandas.
 
-Verified on Python 3.12.14 with NumPy 2.3.5 and pandas 2.2.3: **106 tests pass** (62 market-data, 44 physical-data). Both examples repeat byte-for-byte in fresh directories in that environment.
+Verified on Python 3.12.14 with NumPy 2.3.5 and pandas 2.2.3: **119 tests pass** (69 market-data, 50 physical-data). Both examples repeat byte-for-byte in fresh directories in that environment.
 
 ```sh
 python -m pip install -r requirements.txt
