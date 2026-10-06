@@ -1,1 +1,2 @@
-# Python 3.11 or later. No third-party runtime or test dependencies.
+-r physical-data/requirements.txt
+# market-data and verify.py use only the Python standard library.

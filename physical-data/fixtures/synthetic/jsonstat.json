@@ -1,0 +1,38 @@
+{
+  "dimension": {
+    "geo": {
+      "category": {
+        "index": {
+          "XX_A": 0,
+          "XX_B": 1
+        }
+      }
+    },
+    "time": {
+      "category": {
+        "index": [
+          "2022",
+          "2023"
+        ]
+      }
+    }
+  },
+  "id": [
+    "geo",
+    "time"
+  ],
+  "label": "Synthetic JSON-stat schema exercise; no official statistics",
+  "size": [
+    2,
+    2
+  ],
+  "status": {
+    "1": "p",
+    "2": ":"
+  },
+  "value": {
+    "0": 4.0,
+    "1": 4.5,
+    "3": 3.75
+  }
+}

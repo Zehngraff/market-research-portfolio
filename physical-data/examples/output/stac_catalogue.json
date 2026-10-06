@@ -1,0 +1,144 @@
+{
+  "collection_complete": true,
+  "data_kind": "synthetic",
+  "features": [
+    {
+      "assets": {
+        "nir": {
+          "raster:bands": [
+            {
+              "nodata": 0,
+              "offset": -0.1,
+              "scale": 0.0001
+            }
+          ]
+        },
+        "red": {
+          "raster:bands": [
+            {
+              "nodata": 0,
+              "offset": -0.1,
+              "scale": 0.0001
+            }
+          ]
+        },
+        "swir16": {
+          "raster:bands": [
+            {
+              "nodata": 0,
+              "offset": -0.1,
+              "scale": 0.0001
+            }
+          ]
+        }
+      },
+      "collection": "sentinel-2-l2a",
+      "geometry": null,
+      "id": "synthetic-item-1",
+      "properties": {
+        "datetime": "2024-04-01T10:00:00Z",
+        "synthetic": true
+      },
+      "type": "Feature"
+    },
+    {
+      "assets": {
+        "nir": {
+          "raster:bands": [
+            {
+              "nodata": 0,
+              "offset": -0.1,
+              "scale": 0.0001
+            }
+          ]
+        },
+        "red": {
+          "raster:bands": [
+            {
+              "nodata": 0,
+              "offset": -0.1,
+              "scale": 0.0001
+            }
+          ]
+        },
+        "swir16": {
+          "raster:bands": [
+            {
+              "nodata": 0,
+              "offset": -0.1,
+              "scale": 0.0001
+            }
+          ]
+        }
+      },
+      "collection": "sentinel-2-l2a",
+      "geometry": null,
+      "id": "synthetic-item-2",
+      "properties": {
+        "datetime": "2024-04-02T10:00:00Z",
+        "synthetic": true
+      },
+      "type": "Feature"
+    },
+    {
+      "assets": {
+        "nir": {
+          "raster:bands": [
+            {
+              "nodata": 0,
+              "offset": -0.1,
+              "scale": 0.0001
+            }
+          ]
+        },
+        "red": {
+          "raster:bands": [
+            {
+              "nodata": 0,
+              "offset": -0.1,
+              "scale": 0.0001
+            }
+          ]
+        },
+        "swir16": {
+          "raster:bands": [
+            {
+              "nodata": 0,
+              "offset": -0.1,
+              "scale": 0.0001
+            }
+          ]
+        }
+      },
+      "collection": "sentinel-2-l2a",
+      "geometry": null,
+      "id": "synthetic-item-3",
+      "properties": {
+        "datetime": "2024-04-03T10:00:00Z",
+        "synthetic": true
+      },
+      "type": "Feature"
+    }
+  ],
+  "page_count": 2,
+  "query": {
+    "bbox": [
+      9.9,
+      56.0,
+      10.0,
+      56.1
+    ],
+    "collections": [
+      "sentinel-2-l2a"
+    ],
+    "datetime": "2024-04-01T00:00:00Z/2024-04-12T23:59:59Z",
+    "limit": 2,
+    "query": {
+      "eo:cloud_cover": {
+        "lte": 100
+      }
+    }
+  },
+  "raster_assets_downloaded": false,
+  "type": "FeatureCollection"
+}

@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "portfolio-market-archive"
+version = "0.1.0"
+description = "Selective source-derived public market-data collection and evidence pipeline"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+market-archive = "market_archive.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["market_archive*"]

@@ -1,0 +1,29 @@
+{
+  "data_kind": "synthetic",
+  "minimum_clear_fraction": 0.0,
+  "minimum_pixels": 1,
+  "randomness": "none",
+  "satellite_cutoff_utc": "2024-04-10T23:59:59Z",
+  "stac_query": {
+    "bbox": [
+      9.9,
+      56.0,
+      10.0,
+      56.1
+    ],
+    "collections": [
+      "sentinel-2-l2a"
+    ],
+    "datetime": "2024-04-01T00:00:00Z/2024-04-12T23:59:59Z",
+    "limit": 2,
+    "query": {
+      "eo:cloud_cover": {
+        "lte": 100
+      }
+    }
+  },
+  "synthetic_snapshot_time_utc": "2024-04-13T06:00:00Z",
+  "weather_available_by_utc": "2024-04-13T06:00:00Z",
+  "weather_end": "2024-04-12",
+  "weather_start": "2024-04-01"
+}

@@ -1,0 +1,31 @@
+{
+  "catalogue_items": 3,
+  "catalogue_pages": 2,
+  "cutoff_daily_rows": 8,
+  "data_kind": "synthetic",
+  "limitations": [
+    "Synthetic values demonstrate computation, not predictive performance.",
+    "Satellite arrays are already co-registered; raster retrieval/reprojection is not part of this package.",
+    "Same-date tile weighting does not spatially deduplicate overlapping pixels.",
+    "Fixture availability times illustrate as-of filtering; no historical production availability is claimed."
+  ],
+  "no_real_observations_in_demo": true,
+  "offline_cache_replay_equal": true,
+  "quality_settings": {
+    "minimum_clear_fraction": 0.0,
+    "minimum_pixels": 1
+  },
+  "satellite_cutoff_utc": "2024-04-10T23:59:59Z",
+  "satellite_feature_rows": 2,
+  "satellite_observation_rows": 14,
+  "weather": {
+    "complete_temperature_days": 11,
+    "days": 12,
+    "gdd_base5_total": null,
+    "mean_temperature_c": null,
+    "partial_totals_are_not_full_period_totals": true,
+    "precipitation_observed_valid_days_mm": 22.0,
+    "precipitation_total_mm": null,
+    "valid_precipitation_days": 10
+  }
+}

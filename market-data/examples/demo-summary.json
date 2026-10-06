@@ -1,0 +1,25 @@
+{
+  "archive_verification": {
+    "committed_pages_checked": 4,
+    "indexed_rows_checked": 4,
+    "passed": true,
+    "problems": [],
+    "raw_files_checked": 10,
+    "scope": "Hash and index reconciliation only; not completeness, timing integrity, or profitability."
+  },
+  "assertions": {
+    "bad_page_left_checkpoint_unchanged": true,
+    "cursor_resumed": true,
+    "duplicate_rows_detected": true,
+    "invalid_fee_rejected": true,
+    "invalid_page_reported": true,
+    "no_strategy_readiness_claim": true,
+    "rate_limit_retried_once": true,
+    "recovered_without_duplicate_rows": true,
+    "stale_book_rejected": true
+  },
+  "executed_offline": true,
+  "exercise_passed": true,
+  "outcome": "Pipeline and fault handling demonstrated; sample snapshot quality intentionally fails.",
+  "source_label": "SYNTHETIC_FIXTURE"
+}

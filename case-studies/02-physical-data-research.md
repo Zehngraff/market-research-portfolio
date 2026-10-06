@@ -1,24 +1,22 @@
-# Satellite and physical data research
+# Satellite and weather data processing
 
-I have been developing satellite and weather features alongside conditional revenue scenarios based on agricultural operating data and external prices. The work separates observable activity, saleable volume and recognised revenue.
+I have been developing satellite and weather features alongside research that connects agricultural operating data to revenue scenarios. The data work needs to preserve observation timing and coverage while keeping physical output, saleable volume and recognised revenue distinct.
 
-## What I built
+## Code included here
 
-- A field-level feature bundle combining parcel and crop metadata, Sentinel-2 vegetation indices and ERA5-Land weather features.
-- Source registries and lineage records for public disclosures and external market data, with dates, units and missing-input checks.
-- Crop accounting, production-calendar and feed-related research components that expose gaps in the physical-to-financial reconciliation.
-- Conditional group-revenue scenario work using annual-report physical data and external price information. Quarterly and half-year financial outcomes are reserved for held-out evaluation rather than used as model inputs.
+The [physical-data module](../physical-data/) exposes the acquisition and preprocessing layer:
 
-The satellite feature work and the group-revenue scenarios are components of the same research direction. A fully integrated, independently validated satellite-to-group-revenue forecast has not been established.
+- Public catalogue queries and archived responses with provenance, alongside a decoder for Eurostat JSON-stat data.
+- Sentinel-2 vegetation and moisture indices, scene-classification checks and valid-observation summaries.
+- Same-date observation aggregation, cutoff-aware seasonal features and phenology calculations.
+- ERA5-Land daily weather transformations, including the shifted accumulation window for precipitation and growing-degree-day features.
 
-## Modelling choices and limitations
+Start with the [satellite routines](../physical-data/physical_data/satellite.py), [weather transformations](../physical-data/physical_data/weather.py) and [catalogue client](../physical-data/physical_data/acquisition.py). The module README identifies the routines adapted from the research project and the acquisition interfaces added for this public version.
 
-The pipeline is conceptually: dated observations, physical production, saleable volumes, realised prices and revenue timing. Each step needs its own evidence. Harvested crops can enter inventory or be used as feed; production may be sold later; benchmark prices can differ from realised prices because of contracts, product mix and local basis.
+## Reproduction
 
-Historical field coverage and source vintages are incomplete. Current parcel evidence can misrepresent older operating footprints, and a source hash identifies downloaded bytes without proving historical availability. Missing volume, inventory or price evidence therefore remains a visible limitation rather than being filled with false precision.
+Small, labelled fixtures exercise the numerical transformations and response parsing without distributing field records or proprietary datasets. The generated tables show intermediate features and data-quality information. The tests check units, timing, missing values and malformed input, rather than treating a successful run as evidence of forecast accuracy.
 
-The output is conditional scenario research. Forecast accuracy and profitable application are unproven. Further validation would require frozen, dated scenarios scored against later disclosures, with volume, price and timing errors kept separate.
+## Research boundary
 
-## Relevance to power markets
-
-The connection is the reasoning: weather affects physical output, while volume and price uncertainty interact. Renewable power introduces different assets, time horizons and market rules. This project demonstrates experience with imperfect physical data and explicit uncertainty; it does not claim operating experience on a power trading desk.
+This extract stops at acquisition and features. It does not download and reproject complete satellite rasters, authenticate to climate-data services or reconstruct the full revenue model. Historical field coverage and source vintages remain limitations in the broader research. Inventory, feed use, contracts and sales timing also prevent production or vegetation measurements from being read directly as revenue. A validated satellite-to-group-revenue forecast has not been established.

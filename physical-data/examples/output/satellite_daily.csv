@@ -1,0 +1,9 @@
+field_id,date,ndvi,ndmi,valid_pixels,ndmi_valid_pixels,geometry_pixels,clear_fraction,item_count
+synthetic-field-a,2024-04-01,0.5782309432,0.1569708076,6,6,8,0.75,1
+synthetic-field-a,2024-04-03,0.5778567151,0.1595282177,12,12,16,0.75,2
+synthetic-field-a,2024-04-05,0.577505941,0.1619948529,6,6,8,0.75,1
+synthetic-field-a,2024-04-07,0.5771764829,0.164375462,6,6,8,0.75,1
+synthetic-field-b,2024-04-01,0.5795204962,0.158946283,6,6,8,0.75,1
+synthetic-field-b,2024-04-03,0.5791123183,0.1614334324,12,12,16,0.75,2
+synthetic-field-b,2024-04-05,,,0,0,8,0,1
+synthetic-field-b,2024-04-07,0.5783690691,0.1661509505,6,6,8,0.75,1

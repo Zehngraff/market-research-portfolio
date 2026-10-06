@@ -1,0 +1,10 @@
+{
+  "complete_temperature_days": 11,
+  "days": 12,
+  "gdd_base5_total": null,
+  "mean_temperature_c": null,
+  "partial_totals_are_not_full_period_totals": true,
+  "precipitation_observed_valid_days_mm": 22.0,
+  "precipitation_total_mm": null,
+  "valid_precipitation_days": 10
+}

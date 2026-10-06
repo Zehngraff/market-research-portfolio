@@ -1,0 +1,5 @@
+geo,time,value,status,is_missing
+XX_A,2022,4.0,,False
+XX_A,2023,4.5,p,False
+XX_B,2022,,:,True
+XX_B,2023,3.75,,False

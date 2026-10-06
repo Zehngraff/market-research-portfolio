@@ -1,59 +1,73 @@
-# Market research and data controls
+# Market and physical data pipelines
 
-Two project case studies and a small Python demonstration of research controls: what was known at a decision time, whether an observation is usable, and when committed capital becomes available again.
+Selected data-collection and processing code from my prediction-market and satellite/weather research. The two modules focus on traceable inputs, repeatable ingestion and checks before data reaches an analysis.
 
-I work on research infrastructure and physical-data problems. This portfolio shows selected engineering work while keeping research-specific hypotheses, selection rules and datasets private.
+Core routines are extracted or adapted from the research implementations. Public interfaces, offline fixtures and tests make those components inspectable without exposing research-specific selection rules, calibration or private datasets.
 
-## Start here
+## Explore the code
 
-1. [Prediction market research infrastructure](case-studies/01-prediction-market-research.md): collection, evidence checks and realistic constraints on paper evaluation.
-2. [Satellite and physical data research](case-studies/02-physical-data-research.md): connecting weather, physical production and prices to conditional revenue scenarios.
-3. Run the synthetic demo below, then inspect the tests.
+### Prediction-market data collection
 
-The case studies describe broader research projects. The code here is a new, self-contained demonstration of general controls. All inputs and outputs are synthetic. It is not a trading strategy, a forecast or evidence of profitability.
+[market-data](market-data/) collects explicitly requested public market data into a content-addressed archive and SQLite index. It handles retry and storage budgets, cursor checkpoints, deduplication and quote validation.
 
-## Run the demo
+- [Content-addressed archive and retry budgets](market-data/market_archive/archive.py)
+- [Collection, indexing and checkpoints](market-data/market_archive/collector.py)
+- [Kalshi metadata and trade-page adapter](market-data/market_archive/kalshi.py)
+- [Quote, fee and settlement validation](market-data/market_archive/validation.py)
+- [Module setup and commands](market-data/README.md)
+- [Case study](case-studies/01-prediction-market-research.md)
 
-Requires Python 3.11 or later. There are no third-party dependencies, downloads, credentials or network calls.
+The offline example exercises the collection path against controlled responses and produces evidence that can be inspected and verified. Optional live collection requires an explicit command and input manifest.
+
+### Satellite and weather data processing
+
+[physical-data](physical-data/) discovers public satellite records, archives public statistical responses and transforms satellite arrays and hourly weather into research features.
+
+- [Satellite catalogue acquisition](physical-data/physical_data/acquisition.py)
+- [Sentinel-2 features and observation aggregation](physical-data/physical_data/satellite.py)
+- [Weather accumulation and daily features](physical-data/physical_data/weather.py)
+- [JSON-stat decoding](physical-data/physical_data/jsonstat.py)
+- [Module setup and commands](physical-data/README.md)
+- [Case study](case-studies/02-physical-data-research.md)
+
+The included examples use small, labelled fixtures. Full raster retrieval, geospatial reprojection and authenticated climate downloads are outside this extracted module.
+
+## Run both modules offline
+
+Use Python 3.11 or later. The market-data module uses the standard library; physical-data also uses NumPy and pandas.
+
+Verified on Python 3.12.14 with NumPy 2.3.5 and pandas 2.2.3: **106 tests pass** (62 market-data, 44 physical-data). Both examples repeat byte-for-byte in fresh directories in that environment.
 
 ```sh
-python -m research_demo
-python -m unittest discover -s tests -v
+python -m pip install -r requirements.txt
+python verify.py
 ```
 
-Run both commands from this repository's root directory. On Windows, `py -3` can replace `python`.
+The [verification runner](verify.py) executes both test suites, runs each example twice in fresh directories, compares every generated file and checks the market archive. It does not call live collection. Live collection paths have not been verified against live services for this release; no real observations are bundled. To retain the resulting archives, tables and verification report:
 
-Verified on Python 3.12.14: 74 tests pass. Repeated demo runs produce identical JSON, and the Python and SQLite as-of results agree. These are software checks on synthetic inputs.
+```sh
+python verify.py --output output/verified
+```
 
-## Code map
+Choose a new output directory. Existing files are never overwritten by the root runner. Individual module READMEs document their offline and live commands separately.
 
-- [temporal.py](research_demo/temporal.py): versioned observations, Python and SQLite as-of lookups, and a purged chronological holdout.
-- [execution.py](research_demo/execution.py): quote rejection reasons, fee and depth checks, and the settlement-aware cash ledger.
-- [demo.py](research_demo/demo.py): invented fixtures and hand-specified order attempts.
-- [asof_features.sql](sql/asof_features.sql): a window-function join that preserves missing features as `NULL`.
-- [tests](tests/): boundary cases, malformed inputs, split contamination and accounting invariants.
+## Inspect generated outputs
 
-## What the code demonstrates
+The checked-in examples are generated from labelled offline fixtures using the collection and transformation functions above:
 
-- **Information cutoffs.** Observations carry an event time and an availability time. An as-of lookup uses only information available strictly before the decision cutoff, including the correct historical revision.
-- **Event-aware chronological splitting.** Training observations are purged when their parent event is shared with evaluation data or their outcome or holding window crosses the evaluation boundary.
-- **Quote checks.** Reject future or stale quotes, quotes received too late, wrong instruments, crossed books and invalid numbers.
-- **Execution constraints.** A hand-specified order must fit the displayed depth and its cash budget after fees. No missing liquidity or partial fill is invented.
-- **Capital lifecycle.** Cash committed to an open position cannot fund another order. Settlement requires verified, instrument-matched evidence available strictly before the processing cutoff.
-- **SQL parity.** A SQLite as-of join runs on the synthetic fixture and is checked against the Python implementation.
+- [Market-data archive walkthrough](market-data/examples/demo-report.md) and [verification counts](market-data/examples/demo-summary.json): pagination, retries, resumed collection and evidence reconciliation.
+- [Physical-data quality report](physical-data/examples/output/quality_report.json): coverage, catalogue replay and missing-data checks.
+- [Daily weather table](physical-data/examples/output/weather_daily.csv): temperature, precipitation-cycle checks and accumulated features.
+- [Satellite feature table](physical-data/examples/output/satellite_features.csv): observation coverage, cutoff filtering and vegetation/moisture summaries.
 
-Time is represented by integer ticks. Records first available at the cutoff are excluded because their ordering within that tick is unknown. Label and holding windows are half-open; a window ending exactly at the split boundary does not overlap the evaluation period. Training labels must still be available strictly before that boundary.
+These outputs demonstrate the processing path. They are not real field measurements, revenue forecasts or trading results.
 
-The console output records decisions and accounting states. The accepted examples are mechanical demonstrations; no signal, return series, Sharpe ratio or performance backtest is calculated.
+## Research context
 
-## Design boundaries
+The market project deals with imperfect quote, trade and settlement evidence. The physical-data project deals with observation coverage, weather timing and the gap between physical production and recognised revenue. Both require careful handling of dates, units and missing information before modelling.
 
-The implementation is deliberately narrow. Displayed depth is only an upper-bound check, not a promise of execution. The demo does not model queue priority, changing order books, latency, partial fills, market impact, margin, mark-to-market risk or settlement disputes. Timestamp cutoffs assume that the supplied availability records are trustworthy; they cannot repair missing historical source vintages. Settlement verification is a supplied fixture flag here, not an external resolution check.
+These skills are relevant to power-market research, where weather affects production and volume uncertainty interacts with prices. This repository demonstrates data engineering and preprocessing. It does not establish forecast accuracy, profitable trading or operating experience on a power desk.
 
-Binary synthetic instruments keep the cash lifecycle easy to inspect. European power contracts have different settlement, delivery, balancing and asset constraints. No experience trading EPEX products is implied by this demonstration.
+## Included scope
 
-Passing these tests establishes the tested mechanics on controlled inputs. It does not validate the original research codebases, forecast accuracy or live trading performance.
-
-## Included here
-
-This folder contains selected, newly written demonstration code and concise project descriptions. It excludes original repository history, private data, live endpoints, current strategy reports, market filters, calibrated parameters and company-specific forecasts.
+Public collection, transformation, quality checks and reproducible tests are included. Strategies, market selection, fitted parameters, private datasets, company-specific forecasts and original repository history remain outside this repository. See each module's README for the boundary between retained research routines and the public demonstration wrappers.

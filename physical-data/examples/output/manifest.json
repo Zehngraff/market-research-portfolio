@@ -1,0 +1,110 @@
+{
+  "data_kind": "synthetic",
+  "generated_at_utc": "2024-04-13T06:00:00Z",
+  "inputs": [
+    {
+      "bytes": 1050,
+      "file": "README.md",
+      "sha256": "17e60b59d95ad23ccf745616e6a0bf82f3f8a912a4a240f2ba1f5c8f089724d9"
+    },
+    {
+      "bytes": 21169,
+      "file": "era5_hourly.csv",
+      "sha256": "ed80bf9cd63b1d08ed7ad7b4de9389456be269d4ef773f2b9de846ae1fe808d5"
+    },
+    {
+      "bytes": 628,
+      "file": "fixture_metadata.json",
+      "sha256": "943ece2e027d32cd5a5c12e9458f80bca02c6fda99b7204ec9ee91b30830f35e"
+    },
+    {
+      "bytes": 4269,
+      "file": "generate_fixtures.py",
+      "sha256": "36703697793e4da9cb84ffbe96a408b3ea039041b3425f28692404c3942cddf6"
+    },
+    {
+      "bytes": 502,
+      "file": "jsonstat.json",
+      "sha256": "44b8ce5c393bf05ac983bf2b4e97cc9fb77a37a51eba42d7270a0c6ab62bd6db"
+    },
+    {
+      "bytes": 26347,
+      "file": "satellite_arrays.json",
+      "sha256": "2005f931ceac3687c323946cd267de29d97b3079738cbfe00c39863fe3cc0f43"
+    },
+    {
+      "bytes": 3837,
+      "file": "stac_pages.json",
+      "sha256": "c5abc59966bf5eb632e5eed961d33e76e892a927bb07b4f5b8dc213d75f463f7"
+    }
+  ],
+  "outputs": [
+    {
+      "bytes": 1649,
+      "file": "era5_request_plan.json",
+      "sha256": "5e219509f7a19fccd92cb6b300a5aa0457897ecc26057cddcf50807eee36bf37"
+    },
+    {
+      "bytes": 116,
+      "file": "public_table.csv",
+      "sha256": "5a9f7fbc401c66f0533ec7c45f900ee3b6cdb4fecce87fcb3f882384af25f76a"
+    },
+    {
+      "bytes": 1103,
+      "file": "quality_report.json",
+      "sha256": "021cb194d7dd80f8284f16811894126e9e0a9d09b6fb7378b83f9c978f359b21"
+    },
+    {
+      "bytes": 617,
+      "file": "satellite_daily.csv",
+      "sha256": "51ea0bad779fbc01535c96ac5da43511e4daee1e87d64336053f3b961696fdca"
+    },
+    {
+      "bytes": 481,
+      "file": "satellite_features.csv",
+      "sha256": "0c4d12f8078f618628fed75c639ad7c1b2f5a8391989b142acbfe099d73eb721"
+    },
+    {
+      "bytes": 2238,
+      "file": "satellite_observations.csv",
+      "sha256": "3c9f07080cd9c0bf2d6d67bd37b68f8e802c588c7b73e2804ecef21d5be1b151"
+    },
+    {
+      "bytes": 2886,
+      "file": "stac_catalogue.json",
+      "sha256": "1744e72c338616ed5a221f810d2ede09cdd89e233e4de79c7ca611cf45b98f57"
+    },
+    {
+      "bytes": 434,
+      "file": "synthetic_snapshots/6255b1ce741e5b92d8bb4681283c67039b07fb44031dc4fcc8f3ba84a1f05b38/manifest.json",
+      "sha256": "a17db11216de33acea99f262adf47cd0c21f80bba8688ae1193fee22c8bfb3d3"
+    },
+    {
+      "bytes": 871,
+      "file": "synthetic_snapshots/6255b1ce741e5b92d8bb4681283c67039b07fb44031dc4fcc8f3ba84a1f05b38/response.json",
+      "sha256": "dd7ca9c1ca5a3d674b4e2226f21826f0d2cbaf66d7c1fea260a565b440b14574"
+    },
+    {
+      "bytes": 278,
+      "file": "synthetic_snapshots/d38ff4c75c2a8702db8a73d567216008afe4e881468289dc59d7de4d37d4917a/manifest.json",
+      "sha256": "b915cebef94e20e14b373cd257644f60a134b05e05c00fe3c2e486a285ed2a18"
+    },
+    {
+      "bytes": 792,
+      "file": "synthetic_snapshots/d38ff4c75c2a8702db8a73d567216008afe4e881468289dc59d7de4d37d4917a/response.json",
+      "sha256": "1fde0157f0cb19eb2384a47fcc43e1f6b972e5e3dfd6f69cc96ebf6b31a09981"
+    },
+    {
+      "bytes": 1481,
+      "file": "weather_daily.csv",
+      "sha256": "9838f503e6e9a1be5c9ecb3e1a61a286dba758554ea34c6729d90025bf305e09"
+    },
+    {
+      "bytes": 278,
+      "file": "weather_summary.json",
+      "sha256": "d5c2880b7f989bfc9219c72fae0f7903ab2dc8d10ca64d71cf4c34c9d0ca38e3"
+    }
+  ],
+  "schema_version": 1,
+  "timestamp_is_fixed_fixture_metadata": true
+}
